@@ -107,26 +107,40 @@ class WriteBox(urwid.Pile):
                               prefix_string: str) -> Optional[str]:
         # Handles user mentions (@ mentions and silent mentions)
         # and group mentions.
-        group_typeahead = ['@*{}*'.format(group_name)
-                           for group_name in self.model.user_group_names
-                           if match_groups(group_name, text[1:])]
 
-        users_list = self.view.users
-        user_typeahead = [prefix_string+'**{}**'.format(user['full_name'])
-                          for user in users_list
-                          if match_user(user, text[len(prefix_string):])]
+        group_typeahead = []
+        groups_list = []
+        for group_name in self.model.user_group_names:
+            if match_groups(group_name, text[1:]):
+                group_typeahead.append('@*{}*'.format(group_name))
+                groups_list.append(group_name)
+
+        user_typeahead = []
+        users_list = []
+        for user in self.view.users:
+            if match_user(user, text[len(prefix_string):]):
+                full_name = user['full_name']
+                user_typeahead.append(prefix_string+'**{}**'.format(full_name))
+                users_list.append(full_name)
+
+        combined_list = groups_list + users_list
+
         combined_typeahead = group_typeahead + user_typeahead
         try:
+            self.view.set_typeahead_footer(combined_list, state)
             return combined_typeahead[state]
         except (IndexError, TypeError):
             return None
 
     def autocomplete_streams(self, text: str, state: int) -> Optional[str]:
-        streams_list = self.view.pinned_streams + self.view.unpinned_streams
-        stream_typeahead = ['#**{}**'.format(stream[0])
-                            for stream in streams_list
-                            if match_stream(stream, text[1:])]
+        stream_list = []
+        stream_typeahead = []
+        for stream in self.view.pinned_streams + self.view.unpinned_streams:
+            if match_stream(stream, text[1:]):
+                stream_typeahead.append('#**{}**'.format(stream[0]))
+                stream_list.append(stream[0])
         try:
+            self.view.set_typeahead_footer(stream_list, state)
             return stream_typeahead[state]
         except (IndexError, TypeError):
             return None

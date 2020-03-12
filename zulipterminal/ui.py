@@ -79,6 +79,29 @@ class View(urwid.WidgetWrap):
             time.sleep(duration)
             self.set_footer_text()
 
+    def set_typeahead_footer(self, suggestions: List[Any],
+                             state: int) -> None:
+        suggestion = suggestions[state]
+        highlighted_text = ('code', ' ' + suggestion + ' ')
+        num_suggestions = 10
+
+        if state < 0:
+            suggestions_before = suggestions[-num_suggestions:state]
+            suggestions_after = suggestions[state:
+                                            min(-1, state+num_suggestions-1)]
+        else:
+            suggestions_before = suggestions[max(0, state-num_suggestions+1):
+                                             state]
+            suggestions_after = suggestions[state+1:num_suggestions]
+
+        suggestions_before = list(map(lambda x: ' ' + x + ' ',
+                                      suggestions_before))
+        suggestions_after = list(map(lambda x: ' ' + x + ' ',
+                                     suggestions_after))
+
+        text = suggestions_before + [highlighted_text] + suggestions_after
+        self.set_footer_text(text)
+
     def footer_view(self) -> Any:
         text_header = self.get_random_help()
         return urwid.AttrWrap(urwid.Text(text_header), 'footer')
