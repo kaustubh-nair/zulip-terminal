@@ -94,15 +94,19 @@ class TestWriteBox:
         ('@_', 4, '@_', None),  # Beyond end
         ('@_', -1, '@_', '@_**Human 2**'),
     ])
-    def test_autocomplete_mentions(self, write_box, users_fixture,
+    def test_autocomplete_mentions(self, mocker, write_box, users_fixture,
                                    text, state, prefix_string,
                                    required_typeahead, user_groups_fixture):
+        view = mocker.Mock()
+        set_typeahead_footer = mocker.patch('zulipterminal.ui.View.set_typeahead_footer')
         write_box.view.users = users_fixture
         write_box.model.user_group_names = [
             groups['name'] for groups in user_groups_fixture]
         typeahead_string = write_box.autocomplete_mentions(
             text, state, prefix_string)
         assert typeahead_string == required_typeahead
+        set_typeahead_footer.assert_called_once_with()
+
 
     @pytest.mark.parametrize('text, state, required_typeahead', [
         ('#Stream', 0, '#**Stream 1**'),
@@ -126,8 +130,10 @@ class TestWriteBox:
         ('No match', 0, None),
         ('No match', -1, None)
     ])
-    def test_autocomplete_streams(self, write_box, streams_fixture,
+    def test_autocomplete_streams(self, mocker, write_box, streams_fixture,
                                   text, state, required_typeahead):
+        self.view = mocker.Mock()
+        set_typeahead_footer = mocker.patch('zulipterminal.ui.View.set_typeahead_footer')
         write_box.view.pinned_streams = [
             [stream['name']] for stream in
             streams_fixture[:len(streams_fixture)//2]]
@@ -136,3 +142,4 @@ class TestWriteBox:
             streams_fixture[len(streams_fixture)//2:]]
         typeahead_string = write_box.autocomplete_streams(text, state)
         assert typeahead_string == required_typeahead
+        set_typeahead_footer.assert_called_once_with()
