@@ -107,42 +107,42 @@ class WriteBox(urwid.Pile):
                               prefix_string: str) -> Optional[str]:
         # Handles user mentions (@ mentions and silent mentions)
         # and group mentions.
-
         group_typeahead = []
-        groups_list = []
+        group_suggestions = []
         for group_name in self.model.user_group_names:
             if match_groups(group_name, text[1:]):
                 group_typeahead.append('@*{}*'.format(group_name))
-                groups_list.append(group_name)
+                group_suggestions.append(group_name)
 
         user_typeahead = []
-        users_list = []
+        user_suggestions = []
         for user in self.view.users:
             if match_user(user, text[len(prefix_string):]):
                 full_name = user['full_name']
                 user_typeahead.append(prefix_string+'**{}**'.format(full_name))
-                users_list.append(full_name)
-
-        combined_list = groups_list + users_list
+                user_suggestions.append(full_name)
 
         combined_typeahead = group_typeahead + user_typeahead
+        combined_suggestions = group_suggestions + user_suggestions
         try:
-            self.view.set_typeahead_footer(combined_list, state)
+            self.view.set_typeahead_footer(combined_suggestions, state, combined_suggestions[state])
             return combined_typeahead[state]
         except (IndexError, TypeError):
+            self.view.set_typeahead_footer(combined_suggestions, state, None)
             return None
 
     def autocomplete_streams(self, text: str, state: int) -> Optional[str]:
-        stream_list = []
         stream_typeahead = []
+        stream_suggestions = []
         for stream in self.view.pinned_streams + self.view.unpinned_streams:
             if match_stream(stream, text[1:]):
                 stream_typeahead.append('#**{}**'.format(stream[0]))
-                stream_list.append(stream[0])
+                stream_suggestions.append(stream[0])
         try:
-            self.view.set_typeahead_footer(stream_list, state)
+            self.view.set_typeahead_footer(stream_suggestions, state, stream_suggestions[state])
             return stream_typeahead[state]
         except (IndexError, TypeError):
+            self.view.set_typeahead_footer(stream_suggestions, state, None)
             return None
 
     def keypress(self, size: urwid_Size, key: str) -> Optional[str]:

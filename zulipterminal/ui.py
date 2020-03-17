@@ -79,28 +79,38 @@ class View(urwid.WidgetWrap):
             time.sleep(duration)
             self.set_footer_text()
 
-    def set_typeahead_footer(self, suggestions: List[Any],
-                             state: int) -> None:
-        suggestion = suggestions[state]
-        highlighted_text = ('code', ' ' + suggestion + ' ')
+    @asynch
+    def set_typeahead_footer(self, suggestions: List[Any], state: int,
+                             suggestion: str) -> None:
+        highlighted_text = [('code', ' ' + suggestion + ' ')] if suggestion else []
         num_suggestions = 10
 
-        if state < 0:
-            suggestions_before = suggestions[-num_suggestions:state]
-            suggestions_after = suggestions[state:
-                                            min(-1, state+num_suggestions-1)]
+        if state is not None:
+            if state < 0:
+                if state > -num_suggestions:
+                    footer_suggestions = suggestions[state-num_suggestions:]
+                else:
+                    footer_suggestions = suggestions[state-num_suggestions:state+num_suggestions]
+            else:
+                footer_suggestions = suggestions[max(0,state-num_suggestions+1):max(num_suggestions,state+1)]
         else:
-            suggestions_before = suggestions[max(0, state-num_suggestions+1):
-                                             state]
-            suggestions_after = suggestions[state+1:num_suggestions]
+            footer_suggestions = suggestions[0:num_suggestions]
 
-        suggestions_before = list(map(lambda x: ' ' + x + ' ',
-                                      suggestions_before))
-        suggestions_after = list(map(lambda x: ' ' + x + ' ',
-                                     suggestions_after))
+        footer_suggestions = list(map(lambda x: ' ' + x + ' ', footer_suggestions))
 
-        text = suggestions_before + [highlighted_text] + suggestions_after
-        self.set_footer_text(text)
+        if suggestion is not None:
+            #FIXME deal with suggestions with same names
+            footer_text = [('code', x) 
+                                    if x == ' ' + suggestion + ' ' 
+                                    else x 
+                                    for x in footer_suggestions]
+        else:
+            footer_text = footer_suggestions
+
+        # no matches
+        if footer_text == []:
+            footer_text = ['']
+        self.set_footer_text(footer_text)
 
     def footer_view(self) -> Any:
         text_header = self.get_random_help()
