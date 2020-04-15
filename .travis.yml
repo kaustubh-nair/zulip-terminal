@@ -24,7 +24,7 @@ matrix:
       name: "Install & pytest - CPython 3.6 (default linux)"
     - python: 3.7
       name: "Install & pytest - CPython 3.7 (default linux)"
-    - python: 3.8
+    - python: 3.8.2
       name: "Install & pytest - CPython 3.8 (default linux)"
     - python: pypy3.5
       name: "Install & pytest - PyPy 3.5 (default linux)"
