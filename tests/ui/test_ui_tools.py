@@ -1931,19 +1931,31 @@ class TestMessageBox:
     @pytest.mark.parametrize(['to_vary_in_each_message',
                               'realm_editing_allowed',
                               'msg_body_edit_enabled',
+                              'realm_community_editing',
+                              'realm_community_editing_time_limit',
                               'expect_editing_to_succeed'], [
-        ({'sender_id': 2, 'timestamp': 45}, True, True, False),
-        ({'sender_id': 1, 'timestamp': 1}, True, False, True),
-        ({'sender_id': 1, 'timestamp': 45}, False, True, False),
-        ({'sender_id': 1, 'timestamp': 45}, True, True, True),
+        ({'sender_id': 2, 'timestamp': 45}, True, False, False, 60, False),
+        ({'sender_id': 1, 'timestamp': 1}, True, False, False, 60, True),
+        ({'sender_id': 1, 'timestamp': 45}, False, False, False, 60, False),
+        ({'sender_id': 2, 'timestamp': 45}, True, False, True, 60, True),
+        ({'sender_id': 2, 'timestamp': 1}, True, False, True, None, True),
+        ({'sender_id': 2, 'timestamp': 1}, True, False, True, 60, False),
+        ({'sender_id': 2, 'timestamp': 45}, True, False, False, 60, False),
+        ({'sender_id': 1, 'timestamp': 45}, True, True, False, 60, True),
     ], ids=['msg_sent_by_other_user',
             'time_limit_esceeded',
             'editing_not_allowed',
+            'community_editing_allowed',
+            'community_editing_allowed_no_time_limit',
+            'community_editing_allowed_limit_exceeded',
+            'community_editing_not_allowed',
             'all_conditions_met'])
     def test_keypress_EDIT_MESSAGE(self, mocker, message_fixture,
                                    expect_editing_to_succeed,
                                    to_vary_in_each_message,
                                    realm_editing_allowed,
+                                   realm_community_editing,
+                                   realm_community_editing_time_limit,
                                    msg_body_edit_enabled, key):
         varied_message = dict(message_fixture, **to_vary_in_each_message)
         size = (20,)
@@ -1952,6 +1964,9 @@ class TestMessageBox:
         msg_box.model.initial_data = {
             'realm_allow_message_editing': realm_editing_allowed,
             'realm_message_content_edit_limit_seconds': 60,
+            'realm_allow_community_topic_editing': realm_community_editing,
+            'realm_community_topic_editing_limit_seconds':
+                realm_community_editing_time_limit,
         }
         msg_box.model.client.get_raw_message.return_value = {
             'raw_content': "Edit this message"

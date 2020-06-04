@@ -817,27 +817,54 @@ class MessageBox(urwid.Pile):
                 len(quote))
             self.model.controller.view.middle_column.set_focus('footer')
         elif is_command_key('EDIT_MESSAGE', key):
-            if self.message['sender_id'] != self.model.user_id:
-                self.model.controller.view.set_footer_text(
-                        " You can't edit messages sent by other users.", 3)
-                return key
-            # Check if editing is allowed in the realm
-            elif not self.model.initial_data['realm_allow_message_editing']:
+            # Check if message and topic editing are disabled.
+            if not (self.model.initial_data['realm_allow_message_editing']
+                    or self.model.initial_data[
+                                'realm_allow_community_topic_editing']):
                 self.model.controller.view.set_footer_text(
                     " Editing sent message is disabled.", 3)
                 return key
-            # Check if message is still editable, i.e. within
-            # the time limit.
+
             time_since_msg_sent = time() - self.message['timestamp']
-            edit_time_limit = self.model.initial_data[
-                    'realm_message_content_edit_limit_seconds']
             enable_msg_box = True
-            if time_since_msg_sent >= edit_time_limit:
-                self.model.controller.view.set_footer_text(
-                        " Only topic editing allowed."
-                        " Time Limit for editing the message body has"
-                        " been exceeded.", 3)
-                enable_msg_box = False
+            if self.message['sender_id'] == self.model.user_id:
+                if self.model.initial_data['realm_allow_message_editing']:
+                    # Check if message content is still editable
+                    # i.e within time-limit.
+                    edit_time_limit = self.model.initial_data[
+                            'realm_message_content_edit_limit_seconds']
+                    if time_since_msg_sent >= edit_time_limit:
+                        self.model.controller.view.set_footer_text(
+                                " Only topic editing allowed."
+                                " Time Limit for editing the message body has"
+                                " been exceeded.", 3)
+                        enable_msg_box = False
+                else:
+                    self.model.controller.view.set_footer_text(
+                        " Editing sent message content is disabled.", 3)
+                    return key
+            else:
+                if self.model.initial_data[
+                        'realm_allow_community_topic_editing']:
+                    # Check if message topic is still editable
+                    # i.e within time-limit.
+                    topic_editing_time_limit = self.model.initial_data[
+                            'realm_community_topic_editing_limit_seconds']
+                    if(topic_editing_time_limit is None
+                       or time_since_msg_sent < topic_editing_time_limit):
+                        self.model.controller.view.set_footer_text(
+                                " Only topic editing is permitted.", 3)
+                        enable_msg_box = False
+                    else:
+                        self.model.controller.view.set_footer_text(
+                                " Time Limit for editing the message topic has"
+                                " been exceeded.", 3)
+                        return key
+                else:
+                    self.model.controller.view.set_footer_text(
+                            " You can't edit messages sent by other users.", 3)
+                    return key
+
             self.keypress(size, 'enter')
             msg_id = self.message['id']
             msg = self.model.client.get_raw_message(msg_id)['raw_content']
