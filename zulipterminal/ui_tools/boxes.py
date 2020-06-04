@@ -809,7 +809,8 @@ class MessageBox(urwid.Pile):
                 len(quote))
             self.model.controller.view.middle_column.set_focus('footer')
         elif is_command_key('EDIT_MESSAGE', key):
-            if self.message['sender_id'] != self.model.user_id:
+            if(self.message['sender_id'] != self.model.user_id and not
+               self.model.initial_data['realm_allow_community_topic_editing']):
                 self.model.controller.view.set_footer_text(
                         " You can't edit messages sent by other users.", 3)
                 return key
@@ -824,12 +825,20 @@ class MessageBox(urwid.Pile):
             edit_time_limit = self.model.initial_data[
                     'realm_message_content_edit_limit_seconds']
             disable_msg_box = False
-            if time_since_msg_sent >= edit_time_limit:
+            if(time_since_msg_sent >= edit_time_limit
+                    and self.message['sender_id'] == self.model.user_id):
                 self.model.controller.view.set_footer_text(
                         " Only topic editing allowed."
                         " Time Limit for editing the message body has"
                         " been exceeded.", 3)
                 disable_msg_box = True
+            elif(self.model.initial_data['realm_allow_community_topic_editing']
+                    and self.message['sender_id'] != self.model.user_id
+                    and time_since_msg_sent < 86400):
+                self.model.controller.view.set_footer_text(
+                        " Only topic editing is permitted.", 3)
+                disable_msg_box = True
+
             self.keypress(size, 'enter')
             msg_id = self.message['id']
             msg = self.model.client.get_raw_message(msg_id)['raw_content']
