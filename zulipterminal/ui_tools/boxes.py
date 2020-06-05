@@ -69,10 +69,7 @@ class WriteBox(urwid.Pile):
             key=keys_for_command('AUTOCOMPLETE').pop(),
             key_reverse=keys_for_command('AUTOCOMPLETE_REVERSE').pop()
         )
-        self.stream_write_box = ReadlineEdit(
-            caption="Stream:  ",
-            edit_text=caption
-        )
+        self.stream_write_box = urwid.Text("Stream:  " + caption)
         self.title_write_box = ReadlineEdit(caption="Topic:  ",
                                             edit_text=title)
 
@@ -180,15 +177,8 @@ class WriteBox(urwid.Pile):
         elif is_command_key('TAB', key):
             if len(self.contents) == 0:
                 return key
-            # toggle focus position
-            if self.focus_position == 0 and self.to_write_box is None:
-                if self.contents[0][0].focus_col == 0:
-                    self.contents[0][0].focus_col = 1
-                    return key
-                else:
-                    self.contents[0][0].focus_col = 0
             self.focus_position = self.focus_position == 0
-            self.contents[0][0].focus_col = 0
+            self.contents[0][0].focus_col = 1
 
         key = super().keypress(size, key)
         return key

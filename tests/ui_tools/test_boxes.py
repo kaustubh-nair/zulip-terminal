@@ -174,6 +174,21 @@ class TestWriteBox:
         typeahead_string = write_box.generic_autocomplete(text, state)
         assert typeahead_string == required_typeahead
 
+    @pytest.mark.parametrize("focus_position", [0, 1])
+    @pytest.mark.parametrize("tab_key", keys_for_command("TAB"))
+    @pytest.mark.parametrize("box_type", ["private", "stream"])
+    def test_keypress_TAB(self, write_box, tab_key, focus_position, box_type):
+        if box_type == "stream":
+            write_box.stream_box_view()
+        else:
+            write_box.private_box_view()
+
+        size = (20,)
+        write_box.focus_position = focus_position
+        write_box.keypress(size, tab_key)
+        assert write_box.focus_position == (not focus_position)
+        assert write_box.contents[0][0].focus_col == 1
+
 
 class TestPanelSearchBox:
     search_caption = "Search Results "
