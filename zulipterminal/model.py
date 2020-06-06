@@ -314,14 +314,15 @@ class Model:
         return response['result'] == 'success'
 
     def update_stream_message(self, topic: str, msg_id: int,
-                              content: str) -> bool:
+                              content: Optional[str]) -> bool:
         request = {
             "message_id": msg_id,
-            "content": content,
             # TODO: Add support for "change_later" & "change_all"
             "propagate_mode": "change_one",
             "subject": topic,
         }
+        if content is not None:
+            request["content"] = content
         response = self.client.update_message(request)
         return response['result'] == 'success'
 
