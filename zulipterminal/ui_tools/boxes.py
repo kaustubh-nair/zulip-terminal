@@ -25,6 +25,7 @@ class WriteBox(urwid.Pile):
         self.model = view.model
         self.view = view
         self.msg_edit_id = None  # type: Optional[int]
+        self.msg_body_edit_enabled = True
 
     def main_view(self, new: bool) -> Any:
         if new:
@@ -145,9 +146,11 @@ class WriteBox(urwid.Pile):
         if is_command_key('SEND_MESSAGE', key):
             if self.msg_edit_id:
                 if not self.to_write_box:
+                    msg_content = (self.msg_write_box.edit_text
+                                   if self.msg_body_edit_enabled else None)
                     success = self.model.update_stream_message(
                         topic=self.title_write_box.edit_text,
-                        content=self.msg_write_box.edit_text,
+                        content=msg_content,
                         msg_id=self.msg_edit_id,
                     )
                 else:
@@ -181,14 +184,15 @@ class WriteBox(urwid.Pile):
             if len(self.contents) == 0:
                 return key
             # toggle focus position
-            if self.focus_position == 0 and self.to_write_box is None:
-                if self.contents[0][0].focus_col == 0:
-                    self.contents[0][0].focus_col = 1
-                    return key
-                else:
-                    self.contents[0][0].focus_col = 0
-            self.focus_position = self.focus_position == 0
-            self.contents[0][0].focus_col = 0
+            if self.msg_body_edit_enabled:
+                if self.focus_position == 0 and self.to_write_box is None:
+                    if self.contents[0][0].focus_col == 0:
+                        self.contents[0][0].focus_col = 1
+                        return key
+                    else:
+                        self.contents[0][0].focus_col = 0
+                self.focus_position = self.focus_position == 0
+                self.contents[0][0].focus_col = 0
 
         key = super().keypress(size, key)
         return key
@@ -827,11 +831,13 @@ class MessageBox(urwid.Pile):
             time_since_msg_sent = time() - self.message['timestamp']
             edit_time_limit = self.model.initial_data[
                     'realm_message_content_edit_limit_seconds']
+            enable_msg_box = True
             if time_since_msg_sent >= edit_time_limit:
                 self.model.controller.view.set_footer_text(
-                        " Time Limit for editing the message has"
+                        " Only topic editing allowed."
+                        " Time Limit for editing the message body has"
                         " been exceeded.", 3)
-                return key
+                enable_msg_box = False
             self.keypress(size, 'enter')
             msg_id = self.message['id']
             msg = self.model.client.get_raw_message(msg_id)['raw_content']
@@ -839,6 +845,12 @@ class MessageBox(urwid.Pile):
             write_box.msg_edit_id = msg_id
             write_box.msg_write_box.set_edit_text(msg)
             write_box.msg_write_box.set_edit_pos(len(msg))
+            write_box.msg_body_edit_enabled = enable_msg_box
+            # Set focus to topic box if message body editing is disabled.
+            if not enable_msg_box:
+                write_box.focus_position = 0
+                write_box.contents[0][0].focus_col = 1
+
             self.model.controller.view.middle_column.set_focus('footer')
         elif is_command_key('MSG_INFO', key):
             self.model.controller.show_msg_info(self.message)

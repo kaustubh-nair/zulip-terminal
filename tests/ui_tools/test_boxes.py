@@ -174,6 +174,40 @@ class TestWriteBox:
         typeahead_string = write_box.generic_autocomplete(text, state)
         assert typeahead_string == required_typeahead
 
+    @pytest.mark.parametrize(["msg_body_edit_enabled",
+                              "initial_focus_position",
+                              "initial_focus_col",
+                              "expected_focus_position",
+                              "expected_focus_col",
+                              "box_type"], [
+        (True, 0, 0, 0, 1, "stream"),
+        (True, 0, 1, 1, 0, "stream"),
+        (True, 1, 0, 0, 0, "stream"),
+        (False, 1, 1, 1, 1, "stream"),
+        (True, 1, 0, 0, 0, "private"),
+        (True, 0, 0, 1, 0, "private"),
+    ])
+    @pytest.mark.parametrize("tab_key",
+                             keys_for_command("CYCLE_COMPOSE_FOCUS"))
+    def test_keypress_CYCLE_COMPOSE_FOCUS(self, write_box, tab_key,
+                                          msg_body_edit_enabled,
+                                          initial_focus_position,
+                                          expected_focus_position,
+                                          initial_focus_col,
+                                          expected_focus_col, box_type):
+        if box_type == "stream":
+            write_box.stream_box_view()
+        else:
+            write_box.private_box_view()
+
+        size = (20,)
+        write_box.focus_position = initial_focus_position
+        write_box.contents[0][0].focus_col = initial_focus_col
+        write_box.msg_body_edit_enabled = msg_body_edit_enabled
+        write_box.keypress(size, tab_key)
+        assert write_box.focus_position == expected_focus_position
+        assert write_box.contents[0][0].focus_col == expected_focus_col
+
 
 class TestPanelSearchBox:
     search_caption = "Search Results "

@@ -1930,11 +1930,12 @@ class TestMessageBox:
     @pytest.mark.parametrize('key', keys_for_command('EDIT_MESSAGE'))
     @pytest.mark.parametrize(['to_vary_in_each_message',
                               'realm_editing_allowed',
+                              'msg_body_edit_enabled',
                               'expect_editing_to_succeed'], [
-        ({'sender_id': 2, 'timestamp': 45}, True, False),
-        ({'sender_id': 1, 'timestamp': 1}, True, False),
-        ({'sender_id': 1, 'timestamp': 45}, False, False),
-        ({'sender_id': 1, 'timestamp': 45}, True, True),
+        ({'sender_id': 2, 'timestamp': 45}, True, True, False),
+        ({'sender_id': 1, 'timestamp': 1}, True, False, True),
+        ({'sender_id': 1, 'timestamp': 45}, False, True, False),
+        ({'sender_id': 1, 'timestamp': 45}, True, True, True),
     ], ids=['msg_sent_by_other_user',
             'time_limit_esceeded',
             'editing_not_allowed',
@@ -1943,7 +1944,7 @@ class TestMessageBox:
                                    expect_editing_to_succeed,
                                    to_vary_in_each_message,
                                    realm_editing_allowed,
-                                   key):
+                                   msg_body_edit_enabled, key):
         varied_message = dict(message_fixture, **to_vary_in_each_message)
         size = (20,)
         msg_box = MessageBox(varied_message, self.model, message_fixture)
@@ -1957,6 +1958,7 @@ class TestMessageBox:
         }
         write_box = msg_box.model.controller.view.write_box
         write_box.msg_edit_id = None
+        write_box.msg_body_edit_enabled = None
         mocker.patch("zulipterminal.ui_tools.boxes.time", return_value=100)
         msg_box.keypress(size, key)
 
@@ -1964,6 +1966,7 @@ class TestMessageBox:
             assert write_box.msg_edit_id == varied_message['id']
             write_box.msg_write_box.set_edit_text.assert_called_once_with(
                 "Edit this message")
+            assert write_box.msg_body_edit_enabled == msg_body_edit_enabled
         else:
             assert write_box.msg_edit_id is None
             write_box.msg_write_box.set_edit_text.assert_not_called()
