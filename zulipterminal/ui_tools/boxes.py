@@ -177,7 +177,7 @@ class WriteBox(urwid.Pile):
             self.view.controller.exit_editor_mode()
             self.main_view(False)
             self.view.middle_column.set_focus('body')
-        elif is_command_key('TAB', key):
+        elif is_command_key('CYCLE_COMPOSE_FOCUS', key):
             if len(self.contents) == 0:
                 return key
             # toggle focus position
