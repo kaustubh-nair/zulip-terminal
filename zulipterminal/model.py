@@ -305,23 +305,29 @@ class Model:
         response = self.client.send_message(request)
         return response['result'] == 'success'
 
-    def update_private_message(self, msg_id: int, content: str) -> bool:
+    def update_private_message(self, msg_id: int,
+                               content: Optional[str]) -> bool:
         request = {
             "message_id": msg_id,
             "content": content,
         }
+        if content is not None:
+            request["content"] = content
         response = self.client.update_message(request)
         return response['result'] == 'success'
 
-    def update_stream_message(self, topic: str, msg_id: int,
-                              content: str) -> bool:
+    def update_stream_message(self, topic: Optional[str], msg_id: int,
+                              content: Optional[str]) -> bool:
         request = {
             "message_id": msg_id,
-            "content": content,
             # TODO: Add support for "change_later" & "change_all"
             "propagate_mode": "change_one",
-            "subject": topic,
         }
+        if content is not None:
+            request["content"] = content
+        if topic is not None:
+            request["subject"] = topic
+
         response = self.client.update_message(request)
         return response['result'] == 'success'
 

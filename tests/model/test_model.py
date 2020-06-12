@@ -396,9 +396,10 @@ class TestModel:
         ({'result': 'success'}, True),
         ({'result': 'some_failure'}, False),
     ])
+    @pytest.mark.parametrize('content', ['hi!', None])
     def test_update_private_message(self, mocker, model,
                                     response, return_value,
-                                    content="hi!",
+                                    content,
                                     msg_id=1):
         self.client.update_message = mocker.Mock(return_value=response)
 
@@ -413,17 +414,24 @@ class TestModel:
         ({'result': 'success'}, True),
         ({'result': 'some_failure'}, False),
     ])
+    @pytest.mark.parametrize('content, subject', [
+        ('hi!', 'Some topic'),
+        ('hello', None),
+        (None, 'Topic change'),
+    ])
     def test_update_stream_message(self, mocker, model,
                                    response, return_value,
-                                   content="hi!",
-                                   subject='Hello',
-                                   msg_id=1):
+                                   content, subject, msg_id=1):
         self.client.update_message = mocker.Mock(return_value=response)
 
         result = model.update_stream_message(subject, msg_id, content)
 
-        req = dict(subject=subject, propagate_mode="change_one",
-                   message_id=msg_id, content=content)
+        req = dict(propagate_mode="change_one",
+                   message_id=msg_id)
+        if subject is not None:
+            req["subject"] = subject
+        if content is not None:
+            req["content"] = content
         self.client.update_message.assert_called_once_with(req)
 
         assert result == return_value
