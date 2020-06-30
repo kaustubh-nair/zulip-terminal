@@ -10,8 +10,8 @@ from zulipterminal.config.keys import (
 from zulipterminal.helper import Message, asynch, match_stream, match_user
 from zulipterminal.ui_tools.boxes import PanelSearchBox
 from zulipterminal.ui_tools.buttons import (
-    HomeButton, MentionedButton, PMButton, StarredButton, StreamButton,
-    TopicButton, UnreadPMButton, UserButton,
+    EmojiButton, HomeButton, MentionedButton, PMButton, StarredButton,
+    StreamButton, TopicButton, UnreadPMButton, UserButton,
 )
 from zulipterminal.ui_tools.utils import create_msg_box_list
 from zulipterminal.urwid_types import urwid_Size
@@ -770,7 +770,8 @@ PopUpViewTableContent = Sequence[Tuple[str, Sequence[Tuple[str, str]]]]
 
 class PopUpView(urwid.ListBox):
     def __init__(self, controller: Any, widgets: List[Any],
-                 command: str, requested_width: int, title: str) -> None:
+                 command: str, requested_width: int, title: str,
+                 scrollable: bool=True) -> None:
         self.controller = controller
         self.command = command
         self.title = title
@@ -782,6 +783,7 @@ class PopUpView(urwid.ListBox):
 
         height = self.calculate_popup_height(widgets, self.width)
         self.height = min(max_rows, height)
+        self.scrollable = scrollable
 
         super().__init__(self.log)
 
@@ -852,16 +854,17 @@ class PopUpView(urwid.ListBox):
     def keypress(self, size: urwid_Size, key: str) -> str:
         if is_command_key('GO_BACK', key) or is_command_key(self.command, key):
             self.controller.exit_popup()
-        elif is_command_key('GO_UP', key):
-            key = 'up'
-        elif is_command_key('GO_DOWN', key):
-            key = 'down'
-        elif is_command_key('SCROLL_UP', key):
-            key = 'page up'
-        elif is_command_key('SCROLL_DOWN', key):
-            key = 'page down'
-        elif is_command_key('GO_TO_BOTTOM', key):
-            key = 'end'
+        if self.scrollable:
+            if is_command_key('GO_UP', key):
+                key = 'up'
+            elif is_command_key('GO_DOWN', key):
+                key = 'down'
+            elif is_command_key('SCROLL_UP', key):
+                key = 'page up'
+            elif is_command_key('SCROLL_DOWN', key):
+                key = 'page down'
+            elif is_command_key('GO_TO_BOTTOM', key):
+                key = 'end'
         return super().keypress(size, key)
 
 
@@ -998,9 +1001,36 @@ class MsgInfoView(PopUpView):
 class EmojiPickerView(PopUpView):
     def __init__(self, controller: Any, msg: Message, title: str,
                  emoji_names: List[str]) -> None:
+        self.controller = controller
+        self.view = controller.view
         self.emoji_names = emoji_names
-        self.emoji_btns = [urwid.Text(emoji)
+        self.emoji_btns = [EmojiButton(emoji, controller, 20)
                            for emoji in emoji_names[:7]]
+        controller.enter_editor_mode_with(self)
         widgets = [urwid.Edit(''),
                    urwid.Pile(self.emoji_btns)]
-        super().__init__(controller, widgets, 'GO_BACK', 30, title)
+        urwid.connect_signal(widgets[0], 'change', self.update_emojis)
+        super().__init__(controller, widgets, 'GO_BACK', 30, title, False)
+        self.emoji_lock = threading.Lock()
+
+    def keypress(self, size: urwid_Size, key: str) -> Optional[str]:
+        if is_command_key('ENTER', key):
+            self.scrollable = True
+            self.controller.exit_editor_mode()
+        return super().keypress(size, key)
+
+    @asynch
+    def update_emojis(self, search_box: Any, new_text: str) -> None:
+        if not self.view.controller.is_in_editor_mode():
+            return
+
+        with self.emoji_lock:
+            matching_emojis = []
+            for emoji in self.emoji_names:
+                if emoji.startswith(new_text):
+                    matching_emojis.append(emoji)
+
+            self.emoji_btns = [EmojiButton(emoji, self.controller, 20)
+                               for emoji in matching_emojis[:7]]
+            self.body[1] = urwid.Pile(self.emoji_btns)
+            self.controller.update_screen()

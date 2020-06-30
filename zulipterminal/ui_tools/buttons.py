@@ -252,6 +252,16 @@ class TopicButton(TopButton):
     # TODO: Handle event-based approach for topic-muting.
 
 
+class EmojiButton(TopButton):
+    def __init__(self, name: str, controller: Any, width: int) -> None:
+        super().__init__(controller=controller,
+                         caption=name,
+                         prefix_character='',
+                         show_function=controller.narrow_to_topic,
+                         width=width)
+
+
+
 class UnreadPMButton(urwid.Button):
     def __init__(self, user_id: int, email: str) -> None:
         self.user_id = user_id
