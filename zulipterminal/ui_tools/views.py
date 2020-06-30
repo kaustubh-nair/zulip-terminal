@@ -993,3 +993,14 @@ class MsgInfoView(PopUpView):
                                                                  len(title))
         widgets = self.make_table_with_categories(msg_info, column_widths)
         super().__init__(controller, widgets, 'MSG_INFO', popup_width, title)
+
+
+class EmojiPickerView(PopUpView):
+    def __init__(self, controller: Any, msg: Message, title: str,
+                 emoji_names: List[str]) -> None:
+        self.emoji_names = emoji_names
+        self.emoji_btns = [urwid.Text(emoji)
+                           for emoji in emoji_names[:7]]
+        widgets = [urwid.Edit(''),
+                   urwid.Pile(self.emoji_btns)]
+        super().__init__(controller, widgets, 'GO_BACK', 30, title)

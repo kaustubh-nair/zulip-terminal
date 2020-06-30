@@ -11,12 +11,13 @@ import zulip
 
 from zulipterminal.config.themes import ThemeSpec
 from zulipterminal.helper import Message, asynch
+from zulipterminal.emoji_names import EMOJI_NAMES
 from zulipterminal.model import Model
 from zulipterminal.ui import Screen, View
 from zulipterminal.ui_tools.utils import create_msg_box_list
 from zulipterminal.ui_tools.views import (
-    AboutView, HelpView, MsgInfoView, NoticeView, PopUpConfirmationView,
-    StreamInfoView,
+    AboutView, EmojiPickerView, HelpView, MsgInfoView, NoticeView,
+    PopUpConfirmationView, StreamInfoView,
 )
 from zulipterminal.version import ZT_VERSION
 
@@ -133,6 +134,10 @@ class Controller:
     def show_help(self) -> None:
         help_view = HelpView(self, "Help Menu (up/down scrolls)")
         self.show_pop_up(help_view)
+
+    def show_emoji_picker(self, msg: Message) -> None:
+        emoji_picker = EmojiPickerView(self, msg, "Add reaction", EMOJI_NAMES)
+        self.show_pop_up(emoji_picker)
 
     def show_msg_info(self, msg: Message) -> None:
         msg_info_view = MsgInfoView(self, msg,
