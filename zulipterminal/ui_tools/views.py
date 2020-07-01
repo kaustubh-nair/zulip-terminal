@@ -999,12 +999,13 @@ class MsgInfoView(PopUpView):
 
 
 class EmojiPickerView(PopUpView):
-    def __init__(self, controller: Any, msg: Message, title: str,
+    def __init__(self, controller: Any, message: Message, title: str,
                  emoji_names: List[str]) -> None:
         self.controller = controller
+        self.message = message
         self.view = controller.view
         self.emoji_names = emoji_names
-        self.emoji_btns = [EmojiButton(emoji, controller, 20)
+        self.emoji_btns = [EmojiButton(emoji, controller, 20, message)
                            for emoji in emoji_names[:7]]
         controller.enter_editor_mode_with(self)
         widgets = [urwid.Edit(''),
@@ -1030,7 +1031,8 @@ class EmojiPickerView(PopUpView):
                 if emoji.startswith(new_text):
                     matching_emojis.append(emoji)
 
-            self.emoji_btns = [EmojiButton(emoji, self.controller, 20)
+            self.emoji_btns = [EmojiButton(emoji, self.controller, 20,
+                                           self.message)
                                for emoji in matching_emojis[:7]]
             self.body[1] = urwid.Pile(self.emoji_btns)
             self.controller.update_screen()

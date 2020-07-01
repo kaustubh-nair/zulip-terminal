@@ -12,6 +12,7 @@ import zulip
 from mypy_extensions import TypedDict
 
 from zulipterminal.config.keys import keys_for_command
+from zulipterminal.emoji_names import EMOJI_NAMES
 from zulipterminal.helper import (
     Message, asynch, canonicalize_color, classify_unread_counts,
     index_messages, initial_index, notify, set_count,
@@ -251,21 +252,20 @@ class Model:
     def react_to_message(self,
                          message: Message,
                          reaction_to_toggle: str) -> None:
-        # FIXME Only support thumbs_up for now
-        assert reaction_to_toggle == 'thumbs_up'
+        #TODO: How fast is this lookup?
+        if reaction_to_toggle not in EMOJI_NAMES:
+            return
 
         reaction_to_toggle_spec = dict(
-            emoji_name='thumbs_up',
-            emoji_code='1f44d',
-            reaction_type='unicode_emoji',
+            emoji_name=reaction_to_toggle,
             message_id=str(message['id']))
         existing_reactions = [
-            reaction['emoji_code']
+            reaction['emoji_name']
             for reaction in message['reactions']
             if (reaction['user'].get('user_id', None) == self.user_id
                 or reaction['user'].get('id', None) == self.user_id)
         ]
-        if reaction_to_toggle_spec['emoji_code'] in existing_reactions:
+        if reaction_to_toggle_spec['emoji_name'] in existing_reactions:
             response = self.client.remove_reaction(reaction_to_toggle_spec)
         else:
             response = self.client.add_reaction(reaction_to_toggle_spec)

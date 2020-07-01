@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import urwid
 
 from zulipterminal.config.keys import is_command_key, keys_for_command
+from zulipterminal.helper import Message
 from zulipterminal.urwid_types import urwid_Size
 
 
@@ -253,11 +254,14 @@ class TopicButton(TopButton):
 
 
 class EmojiButton(TopButton):
-    def __init__(self, name: str, controller: Any, width: int) -> None:
+    def __init__(self, name: str, controller: Any, width: int,
+                 message: Message) -> None:
+        self.message = message
+        self.emoji_name = name
         super().__init__(controller=controller,
                          caption=name,
                          prefix_character='',
-                         show_function=controller.narrow_to_topic,
+                         show_function=controller.react_to_message,
                          width=width)
 
 

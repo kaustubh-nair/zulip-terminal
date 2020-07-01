@@ -213,6 +213,10 @@ class Controller:
 
         self._finalize_show(w_list)
 
+    def react_to_message(self, button: Any) -> None:
+        self.model.react_to_message(button.message,
+                                    button.emoji_name)
+
     def narrow_to_stream(self, button: Any) -> None:
         if hasattr(button, 'message'):
             anchor = button.message['id']
