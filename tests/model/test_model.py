@@ -144,7 +144,8 @@ class TestModel:
                 event_types=event_types,
                 fetch_event_types=fetch_event_types,
                 apply_markdown=True,
-                client_gravatar=True)
+                client_gravatar=True,
+                include_subscribers=True)
 
     @pytest.mark.parametrize('msg_id', [1, 5, set()])
     @pytest.mark.parametrize('narrow', [
@@ -1407,8 +1408,9 @@ class TestModel:
     ], ids=[
         'remove_19', 'add_30'
     ])
-    def test__handle_subscription_event(self, model, mocker, stream_button,
-                                        event, final_muted_streams):
+    def test__handle_subscription_event_muting(self, model, mocker,
+                                               stream_button, event,
+                                               final_muted_streams):
         model.muted_streams = {15, 19}
         model.controller.view.stream_id_to_button = {
             event['stream_id']: stream_button  # stream id is known
@@ -1426,6 +1428,24 @@ class TestModel:
         else:
             mark_muted.assert_called_once_with()
         model.controller.update_screen.assert_called_once_with()
+
+    @pytest.mark.parametrize('event, expected_subscribers', [
+        ({'type': 'subscription', 'op': 'peer_remove',
+          'stream_id': 99, 'user_id': 12}, [1001, 11]),
+        ({'type': 'subscription', 'op': 'peer_remove',
+          'stream_id': 1, 'user_id': 13}, [1001, 12])
+    ], ids=[
+
+    ])
+    def test__handle_subscription_event_subscribers(self, model, mocker,
+                                                    stream_dict, event,
+                                                    expected_subscribers):
+        model.stream_dict = stream_dict
+
+        model._handle_subscription_event(event)
+
+        new_subscribers = model.stream_dict[event['stream_id']]['subscribers']
+        assert new_subscribers == expected_subscribers
 
     @pytest.mark.parametrize('muted_streams, stream_id, is_muted', [
         ({1},   1, True),

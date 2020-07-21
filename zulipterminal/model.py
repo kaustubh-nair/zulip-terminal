@@ -45,6 +45,7 @@ Event = TypedDict('Event', {
     'subject': str,
     # subscription:
     'property': str,
+    'user_id': int,  # Present when a streams subscribers are updated.
     'stream_id': int,
     'value': bool,
     'message_ids': List[int]  # Present when subject of msg(s) is updated
@@ -632,6 +633,12 @@ class Model:
                     stream_button.mark_muted()
 
                 self.controller.update_screen()
+        if event['op'] == 'peer_add':
+            subscribers = self.stream_dict[event['stream_id']]['subscribers']
+            subscribers.append(event['user_id'])
+        elif event['op'] == 'peer_remove':
+            subscribers = self.stream_dict[event['stream_id']]['subscribers']
+            subscribers.remove(event['user_id'])
 
     def _handle_typing_event(self, event: Event) -> None:
         """
@@ -970,7 +977,8 @@ class Model:
             response = self.client.register(event_types=event_types,
                                             fetch_event_types=fetch_types,
                                             client_gravatar=True,
-                                            apply_markdown=True)
+                                            apply_markdown=True,
+                                            include_subscribers=True)
         except zulip.ZulipError as e:
             return str(e)
 
