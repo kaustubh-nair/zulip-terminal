@@ -654,6 +654,12 @@ class Model:
                 else:
                     raise RuntimeError("Unknown typing event operation")
 
+    def get_user_id_from_email(self, email: str) -> int:
+        for user in self.users:
+            if user['email'] == email:
+                return user['user_id']
+        raise RuntimeError("Invalid user email")
+
     def are_valid_recipients(self, recipient_emails: List[str]) -> bool:
         user_emails = {user['email'] for user in self.users}
         return set(recipient_emails).issubset(user_emails)
