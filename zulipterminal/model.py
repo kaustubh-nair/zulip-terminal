@@ -2,6 +2,7 @@ import json
 import time
 from collections import OrderedDict, defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor, wait
+from copy import deepcopy
 from typing import (
     Any, Callable, DefaultDict, Dict, FrozenSet, Iterable, List, Optional, Set,
     Tuple, Union,
@@ -585,6 +586,24 @@ class Model:
                     for stream in subscriptions if not stream['pin_to_top']],
                    key=lambda s: s[0].lower())
         )
+
+    def get_subscribers_in_stream(self, stream_id: Optional[int]=None,
+                                  stream_name: Optional[str]=None,
+                                  ) -> List[int]:
+        subscribers = []  # type: List[int]
+        if stream_id:
+            subscribers = deepcopy(self.stream_dict[stream_id]['subscribers'])
+        elif stream_name:
+            for stream in self.stream_dict.values():
+                if stream['name'] == stream_name:
+                    subscribers = deepcopy(stream['subscribers'])
+        else:
+            raise RuntimeError("Invalid argument")
+        if not subscribers:
+            raise RuntimeError("No subscribers found for stream")
+        subscribers.remove(self.user_id)
+
+        return subscribers
 
     def _group_info_from_realm_user_groups(self,
                                            groups: List[Dict[str, Any]]

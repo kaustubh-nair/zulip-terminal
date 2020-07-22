@@ -61,8 +61,11 @@ class WriteBox(urwid.Pile):
         ]
         self.focus_position = 1
 
-    def stream_box_view(self, caption: str='', title: str='') -> None:
+    def stream_box_view(self, stream_id: int, caption: str='', title: str='',
+                        ) -> None:
         self.set_editor_mode()
+        self.recipient_user_ids = self.model.get_subscribers_in_stream(
+                                                        stream_id=stream_id)
         self.to_write_box = None
         self.msg_write_box = ReadlineEdit(multiline=True)
         self.msg_write_box.enable_autocomplete(
@@ -253,6 +256,10 @@ class WriteBox(urwid.Pile):
                             self.view.set_footer_text("Invalid stream name", 3)
                             return key
 
+                        subscribers = self.model.get_subscribers_in_stream(
+                                                        stream_name=stream_name
+                                                    )
+                        self.recipient_user_ids = subscribers
                         header.focus_col = 1
                         return key
                     else:
@@ -918,7 +925,8 @@ class MessageBox(urwid.Pile):
             elif self.message['type'] == 'stream':
                 self.model.controller.view.write_box.stream_box_view(
                     caption=self.message['display_recipient'],
-                    title=self.message['subject']
+                    title=self.message['subject'],
+                    stream_id=self.stream_id,
                 )
         elif is_command_key('STREAM_MESSAGE', key):
             if self.message['type'] == 'private':
@@ -928,7 +936,8 @@ class MessageBox(urwid.Pile):
                 )
             elif self.message['type'] == 'stream':
                 self.model.controller.view.write_box.stream_box_view(
-                    caption=self.message['display_recipient']
+                    caption=self.message['display_recipient'],
+                    stream_id=self.stream_id,
                 )
         elif is_command_key('STREAM_NARROW', key):
             if self.message['type'] == 'private':
