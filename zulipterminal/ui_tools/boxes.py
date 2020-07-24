@@ -232,12 +232,24 @@ class WriteBox(urwid.Pile):
                 return key
             header = self.contents[0][0]
             # toggle focus position
-            if self.focus_position == 0 and self.to_write_box is None:
-                if header.focus_col == 0:
-                    header.focus_col = 1
-                    return key
+            if self.focus_position == 0:
+                if self.to_write_box is None:
+                    if header.focus_col == 0:
+                        stream_name = header[0].edit_text
+                        if not self.model.is_valid_stream(stream_name):
+                            self.view.set_footer_text("Invalid stream name", 3)
+                            return key
+
+                        header.focus_col = 1
+                        return key
+                    else:
+                        header.focus_col = 0
                 else:
-                    header.focus_col = 0
+                    recipient_emails = header.original_widget.edit_text.split(', ')
+                    if not self.model.are_valid_recipients(recipient_emails):
+                        self.view.set_footer_text("Invalid recipients", 3)
+                        return key
+
             self.focus_position = self.focus_position == 0
             header.focus_col = 0
 
