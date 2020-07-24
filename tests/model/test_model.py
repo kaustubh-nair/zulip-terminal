@@ -1392,12 +1392,14 @@ class TestModel:
     @pytest.mark.parametrize('event, final_muted_streams, ', [
         (
             {'property': 'in_home_view',
+             'op': 'update',
              'stream_id': 19,
              'value': True},
             {15}
         ),
         (
             {'property': 'in_home_view',
+             'op': 'update',
              'stream_id': 30,
              'value': False},
             {15, 19, 30}
