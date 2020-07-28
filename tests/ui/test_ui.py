@@ -52,6 +52,13 @@ class TestView:
         assert view.users_view == right_view()
         assert return_value == line_box()
 
+    def test_set_footer_text_same_test(self, view, mocker, text=['heya']):
+        view._w.footer.text = text
+
+        view.set_footer_text(text)
+
+        view._w.footer.set_text.assert_not_called()
+
     def test_set_footer_text_default(self, view, mocker):
         mocker.patch('zulipterminal.ui.View.get_random_help',
                      return_value=['some help text'])

@@ -77,6 +77,8 @@ class View(urwid.WidgetWrap):
         if text_list is None:
             text = self.get_random_help()
         else:
+            if self._w.footer.text == text_list:
+                return
             text = text_list
         self._w.footer.set_text(text)
         self.controller.update_screen()
